@@ -3,7 +3,7 @@ import axios, {
   type AxiosInstance,
   type InternalAxiosRequestConfig,
 } from "axios";
-import type { AuthResponseDto, RefreshTokenDto } from "../types/api";
+import type { AuthResponseDto } from "../types/api";
 
 // Get API base URL from environment variables
 const API_BASE_URL =
@@ -15,25 +15,12 @@ const api: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true, // Important: Send cookies with requests
 });
 
-// Request Interceptor: Add JWT token to all requests
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    // Get token from localStorage
-    const token = localStorage.getItem("token");
-
-    // If token exists, add it to Authorization header
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// Note: No request interceptor needed!
+// httpOnly cookies are automatically sent by the browser
+// We don't need to manually add Authorization headers
 
 // Response Interceptor: Handle errors and token refresh
 api.interceptors.response.use(
@@ -51,42 +38,16 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Try to refresh the token
-        const refreshToken = localStorage.getItem("refreshToken");
+        // Call refresh endpoint - cookies are sent automatically
+        // No need to pass tokens in body, they're in cookies
+        await api.post<AuthResponseDto>("/api/auth/refresh", {});
 
-        if (refreshToken) {
-          const refreshData: RefreshTokenDto = {
-            token: localStorage.getItem("token") || "",
-            refreshToken: refreshToken,
-          };
-
-          // Call refresh endpoint
-          const response = await axios.post<AuthResponseDto>(
-            `${API_BASE_URL}/api/auth/refresh`,
-            refreshData
-          );
-
-          const { token, refreshToken: newRefreshToken } = response.data;
-
-          // Update tokens in localStorage
-          localStorage.setItem("token", token);
-          localStorage.setItem("refreshToken", newRefreshToken);
-
-          // Update the original request with new token
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-          }
-
-          // Retry the original request
-          return api(originalRequest);
-        }
+        // Tokens are now in httpOnly cookies, automatically set by backend
+        // Just retry the original request
+        return api(originalRequest);
       } catch (refreshError) {
-        // If refresh fails, clear tokens and redirect to login
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("user");
-
-        // Redirect to login page (we'll implement routing later)
+        // If refresh fails, redirect to login
+        // Cookies will be cleared by backend on logout
         window.location.href = "/login";
         return Promise.reject(refreshError);
       }

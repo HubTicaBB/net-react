@@ -1,9 +1,8 @@
 import type { AuthResponseDto } from "../types/api";
 
-// Store user authentication data
+// Store user data (tokens are in httpOnly cookies, not accessible to JavaScript)
 export const saveAuthData = (authData: AuthResponseDto): void => {
-  localStorage.setItem("token", authData.token);
-  localStorage.setItem("refreshToken", authData.refreshToken);
+  // Only store user info, not tokens (tokens are in httpOnly cookies)
   localStorage.setItem(
     "user",
     JSON.stringify({
@@ -26,8 +25,10 @@ export const getCurrentUser = (): {
 };
 
 // Check if user is logged in
+// Note: We can't check cookies directly (httpOnly), so we check if user data exists
+// In a real app, you might want to verify with the backend
 export const isAuthenticated = (): boolean => {
-  return !!localStorage.getItem("token");
+  return !!getCurrentUser();
 };
 
 // Check if user has a specific role
@@ -47,8 +48,7 @@ export const isMember = (): boolean => {
 };
 
 // Clear authentication data (logout)
+// Note: Cookies are cleared by the backend, we just clear local user data
 export const clearAuthData = (): void => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");
 };

@@ -55,6 +55,20 @@ public static class DependencyInjection
                 ValidAudience = audience,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
             };
+            
+            // Read token from cookie if not in Authorization header
+            options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    // If no token in Authorization header, try to get it from cookie
+                    if (string.IsNullOrEmpty(context.Token))
+                    {
+                        context.Token = context.Request.Cookies["token"];
+                    }
+                    return System.Threading.Tasks.Task.CompletedTask;
+                }
+            };
         });
 
         // Repositories
