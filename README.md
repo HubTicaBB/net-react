@@ -3,12 +3,13 @@
 ## Step 1: Create React app with TypeScript and Tailwind CSS
 
 ### What I'll do:
+
 1. Create a new React app with TypeScript using Vite (faster than Create React App)
 ```
 npm create vite@latest library-frontend -- --template react-ts
 cd library-frontend
 ```
-3. Install and configure Tailwind CSS
+2. Install and configure Tailwind CSS
 ```
 npm install -D tailwindcss postcss autoprefixer
 npm install @tailwindcss/postcss 
@@ -29,7 +30,6 @@ export default {
   plugins: [],
 }
 ```
-
 ```js
 // postcss.config.js
 
@@ -40,7 +40,6 @@ export default {
   },
 };
 ```
-
 ```css
 // src/index.css
 
@@ -49,7 +48,8 @@ export default {
 @tailwind components;
 @tailwind utilities;
 ```
-4. Set up a basic project structure
+
+3. Set up a basic project structure
 ```
 mkdir -p components pages services types hooks utils
 ```
@@ -63,12 +63,13 @@ mkdir -p components pages services types hooks utils
 ## Step 2: Setting up the API client (Axios configuration)
 
 ### What I'll do:
+
 1. Install Axios
 ```
 npm install axios
 ```
 2. Create an API client with base configuration
-   - Crate TS types:
+  1. Crate TS types:
 ```ts
 // src/types/api.ts
 
@@ -164,7 +165,7 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 ```
-  - Create API client
+  2. Create API client
   ```ts
 import axios, {
   type AxiosError,
@@ -266,6 +267,41 @@ api.interceptors.response.use(
 );
 
 export default api;
+```
+  3. Create Services
+```ts
+// src/services/authService.ts
+
+import api from "./api";
+import type {
+  RegisterDto,
+  LoginDto,
+  AuthResponseDto,
+  RefreshTokenDto,
+} from "../types/api";
+
+export const authService = {
+  // Register a new user
+  register: async (data: RegisterDto): Promise<AuthResponseDto> => {
+    const response = await api.post<AuthResponseDto>(
+      "/api/auth/register",
+      data
+    );
+    return response.data;
+  },
+
+  // Login user
+  login: async (data: LoginDto): Promise<AuthResponseDto> => {
+    const response = await api.post<AuthResponseDto>("/api/auth/login", data);
+    return response.data;
+  },
+
+  // Refresh access token
+  refreshToken: async (data: RefreshTokenDto): Promise<AuthResponseDto> => {
+    const response = await api.post<AuthResponseDto>("/api/auth/refresh", data);
+    return response.data;
+  },
+};
 
 ```
 
