@@ -25,10 +25,84 @@
 ```
 npm create vite@latest library-frontend -- --template react-ts
 cd library-frontend
-npx tailwindcss init -p
 ```
 
 #### Installing Tailwind CSS and configuring it:
 ```
-cd npm install -D tailwindcss postcss autoprefixer
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
 ```
+
+#### Configure Tailwind:
+```js
+// tailwind.config.js
+
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+```
+
+```js
+// postcss.config.js
+
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+```
+
+```css
+// src/index.css
+
+// replace existing css with
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+#### Create basic project structure
+```
+mkdir -p components pages services types hooks utils
+```
+
+## Step 2: Setting up the API client (Axios configuration)
+
+### What I'll do:
+- Install Axios
+- Create an API client with base configuration
+- Set up interceptors for:
+  - Adding authentication tokens to requests
+  - Handling token refresh
+  - Error handling
+- Create TypeScript types for API responses
+- Set up environment variables for the API base URL
+
+### Why Axios over Fetch:
+- Interceptors: automatically add tokens to all requests
+- Better error handling: automatic JSON parsing, status code handling
+- Request/response transformation: easier to transform data
+- Timeout support: built-in timeout configuration
+- More developer-friendly: cleaner API than fetch
+
+### What I'll create:
+- src/services/api.ts - Axios instance with interceptors
+- src/types/api.ts - TypeScript types for API responses
+- .env file - Environment variables for API URL
+- Update vite.config.ts if needed for environment variables
+
+#### Code structure:
+- Base URL configuration (pointing to your .NET API)
+- Request interceptor: adds JWT token from localStorage
+- Response interceptor: handles errors and token refresh
+- Type-safe API response types
+
