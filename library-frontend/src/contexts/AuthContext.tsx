@@ -12,6 +12,7 @@ import {
   getCurrentUser,
   clearAuthData,
   isAuthenticated,
+  isLibrarian,
 } from "../utils/auth";
 
 interface AuthContextType {
@@ -21,6 +22,7 @@ interface AuthContextType {
   register: (data: RegisterDto) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: () => boolean;
+  isLibrarian: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -105,6 +107,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     register,
     logout,
     isAuthenticated,
+    isLibrarian,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
