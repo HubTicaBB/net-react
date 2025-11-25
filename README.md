@@ -69,7 +69,7 @@ mkdir -p components pages services types hooks utils
 npm install axios
 ```
 2. Create an API client with base configuration
-  1. Crate TS types:
+    1. Crate TS types:
 ```ts
 // src/types/api.ts
 
@@ -165,8 +165,8 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 ```
-  2. Create API client
-  ```ts
+   3. Create API client
+```ts
 import axios, {
   type AxiosError,
   type AxiosInstance,
