@@ -35,7 +35,7 @@ export default {
 
 export default {
   plugins: {
-    tailwindcss: {},
+    "@tailwindcss/postcss": {},
     autoprefixer: {},
   },
 };
@@ -49,7 +49,7 @@ export default {
 @tailwind components;
 @tailwind utilities;
 ```
-5. Set up a basic project structure
+4. Set up a basic project structure
 ```
 mkdir -p components pages services types hooks utils
 ```
@@ -59,19 +59,216 @@ mkdir -p components pages services types hooks utils
 2. TypeScript: catches errors early, improves code quality
 3. Tailwind CSS: utility-first CSS for rapid UI development
 
-### What I'll create:
-1. Initialize a Vite + React + TypeScript project in library-frontend
-2. Install Tailwind CSS and its dependencies
-3, Configure Tailwind in `tailwind.config.js`
-4. Add Tailwind directives to CSS
-5. Set up a basic folder structure (components, pages, services, etc.)
-
 
 ## Step 2: Setting up the API client (Axios configuration)
 
 ### What I'll do:
-- Install Axios
-- Create an API client with base configuration
+1. Install Axios
+```
+npm install axios
+```
+2. Create an API client with base configuration
+   - Crate TS types:
+```ts
+// src/types/api.ts
+
+// Auth Types
+export interface RegisterDto {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface LoginDto {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponseDto {
+  token: string;
+  refreshToken: string;
+  expiration: string; // ISO date string
+  userId: string;
+  email: string;
+  role: string;
+}
+
+export interface RefreshTokenDto {
+  token: string;
+  refreshToken: string;
+}
+
+// Book Types
+export interface BookDto {
+  id: number;
+  title: string;
+  author: string;
+  isbn: string;
+  publishedYear: number;
+  availableCopies: number;
+  createdAt: string; // ISO date string
+}
+
+export interface CreateBookDto {
+  title: string;
+  author: string;
+  isbn: string;
+  publishedYear: number;
+  availableCopies: number;
+}
+
+export interface UpdateBookDto {
+  title: string;
+  author: string;
+  isbn: string;
+  publishedYear: number;
+  availableCopies: number;
+}
+
+// Borrowing Types
+export const BorrowingStatus = {
+  Borrowed: 1,
+  Returned: 2,
+  Overdue: 3,
+} as const;
+
+export type BorrowingStatus =
+  (typeof BorrowingStatus)[keyof typeof BorrowingStatus];
+
+export interface BorrowingDto {
+  id: number;
+  bookId: number;
+  bookTitle: string;
+  userId: string;
+  userName: string;
+  borrowDate: string; // ISO date string
+  returnDate: string | null; // ISO date string or null
+  dueDate: string; // ISO date string
+  status: string;
+}
+
+export interface CreateBorrowingDto {
+  bookId: number;
+  dueDate: string; // ISO date string
+}
+
+export interface UpdateBorrowingDto {
+  returnDate: string | null; // ISO date string or null
+  status: BorrowingStatus;
+}
+
+// API Error Response
+export interface ApiError {
+  message: string;
+  errors?: Record<string, string[]>;
+}
+```
+  - Create API client
+  ```ts
+import axios, {
+  type AxiosError,
+  type AxiosInstance,
+  type InternalAxiosRequestConfig,
+} from "axios";
+import type { AuthResponseDto, RefreshTokenDto } from "../types/api";
+
+// Get API base URL from environment variables
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5146";
+
+// Create Axios instance
+const api: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Request Interceptor: Add JWT token to all requests
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    // Get token from localStorage
+    const token = localStorage.getItem("token");
+
+    // If token exists, add it to Authorization header
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response Interceptor: Handle errors and token refresh
+api.interceptors.response.use(
+  (response) => {
+    // If request succeeds, just return the response
+    return response;
+  },
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
+
+    // If error is 401 (Unauthorized) and we haven't tried to refresh yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Try to refresh the token
+        const refreshToken = localStorage.getItem("refreshToken");
+
+        if (refreshToken) {
+          const refreshData: RefreshTokenDto = {
+            token: localStorage.getItem("token") || "",
+            refreshToken: refreshToken,
+          };
+
+          // Call refresh endpoint
+          const response = await axios.post<AuthResponseDto>(
+            `${API_BASE_URL}/api/auth/refresh`,
+            refreshData
+          );
+
+          const { token, refreshToken: newRefreshToken } = response.data;
+
+          // Update tokens in localStorage
+          localStorage.setItem("token", token);
+          localStorage.setItem("refreshToken", newRefreshToken);
+
+          // Update the original request with new token
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+          }
+
+          // Retry the original request
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        // If refresh fails, clear tokens and redirect to login
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+
+        // Redirect to login page (we'll implement routing later)
+        window.location.href = "/login";
+        return Promise.reject(refreshError);
+      }
+    }
+
+    // For other errors, just reject with the error
+    return Promise.reject(error);
+  }
+);
+
+export default api;
+
+```
+
 - Set up interceptors for:
   - Adding authentication tokens to requests
   - Handling token refresh
