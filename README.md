@@ -4,12 +4,13 @@
 
 ### What I'll do:
 
-1. Create a new React app with TypeScript using Vite (faster than Create React App)
+#### 1. Create a new React app with TypeScript using Vite (faster than Create React App)
 ```
 npm create vite@latest library-frontend -- --template react-ts
 cd library-frontend
 ```
-2. Install and configure Tailwind CSS
+
+#### 2. Install and configure Tailwind CSS
 ```
 npm install -D tailwindcss postcss autoprefixer
 npm install @tailwindcss/postcss 
@@ -49,7 +50,7 @@ export default {
 @tailwind utilities;
 ```
 
-3. Set up a basic project structure
+#### 3. Set up a basic project structure
 ```
 mkdir -p components pages services types hooks utils
 ```
@@ -59,17 +60,19 @@ mkdir -p components pages services types hooks utils
 2. TypeScript: catches errors early, improves code quality
 3. Tailwind CSS: utility-first CSS for rapid UI development
 
-
+-------------------------------------------------------------------
 ## Step 2: Setting up the API client (Axios configuration)
 
 ### What I'll do:
 
-1. Install Axios
+#### 1. Install Axios
 ```
 npm install axios
 ```
-2. Create an API client with base configuration
-    1. Crate TS types:
+
+#### 2. Create an API client with base configuration
+
+##### Create TS types:
 ```ts
 // src/types/api.ts
 
@@ -165,7 +168,8 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 ```
-   3. Create API client
+
+##### Create API client
 ```ts
 import axios, {
   type AxiosError,
@@ -267,8 +271,11 @@ api.interceptors.response.use(
 );
 
 export default api;
+
 ```
-  3. Create Services
+
+##### Create Services
+
 ```ts
 // src/services/authService.ts
 
@@ -305,6 +312,7 @@ export const authService = {
 ```
 ```ts
 // src/services/bookService.ts
+
 import api from "./api";
 import type { BookDto, CreateBookDto, UpdateBookDto } from "../types/api";
 
@@ -341,6 +349,7 @@ export const bookService = {
 ```
 ```ts
 // src/services/borrowingService.ts
+
 import api from "./api";
 import type {
   BorrowingDto,
@@ -382,31 +391,65 @@ export const borrowingService = {
   },
 };
 ```
+##### Create utility to manage auth state
+```ts
+// src/utils/auth.ts
 
-- Set up interceptors for:
-  - Adding authentication tokens to requests
-  - Handling token refresh
-  - Error handling
-- Create TypeScript types for API responses
-- Set up environment variables for the API base URL
+import type { AuthResponseDto } from "../types/api";
 
-### Why Axios over Fetch:
-- Interceptors: automatically add tokens to all requests
-- Better error handling: automatic JSON parsing, status code handling
-- Request/response transformation: easier to transform data
-- Timeout support: built-in timeout configuration
-- More developer-friendly: cleaner API than fetch
+// Store user authentication data
+export const saveAuthData = (authData: AuthResponseDto): void => {
+  localStorage.setItem("token", authData.token);
+  localStorage.setItem("refreshToken", authData.refreshToken);
+  localStorage.setItem(
+    "user",
+    JSON.stringify({
+      userId: authData.userId,
+      email: authData.email,
+      role: authData.role,
+    })
+  );
+};
 
-### What I'll create:
-- src/services/api.ts - Axios instance with interceptors
-- src/types/api.ts - TypeScript types for API responses
-- .env file - Environment variables for API URL
-- Update vite.config.ts if needed for environment variables
+// Get current user from localStorage
+export const getCurrentUser = (): {
+  userId: string;
+  email: string;
+  role: string;
+} | null => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  return JSON.parse(userStr);
+};
 
-#### Code structure:
-- Base URL configuration (pointing to your .NET API)
-- Request interceptor: adds JWT token from localStorage
-- Response interceptor: handles errors and token refresh
-- Type-safe API response types
+// Check if user is logged in
+export const isAuthenticated = (): boolean => {
+  return !!localStorage.getItem("token");
+};
+
+// Check if user has a specific role
+export const hasRole = (role: string): boolean => {
+  const user = getCurrentUser();
+  return user?.role === role;
+};
+
+// Check if user is a librarian
+export const isLibrarian = (): boolean => {
+  return hasRole("Librarian");
+};
+
+// Check if user is a member
+export const isMember = (): boolean => {
+  return hasRole("Member");
+};
+
+// Clear authentication data (logout)
+export const clearAuthData = (): void => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("refreshToken");
+  localStorage.removeItem("user");
+};
+```
+
 
 
