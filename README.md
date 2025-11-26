@@ -68,7 +68,7 @@ export interface RegisterDto {
 ```
 
 ### 3. Create Axios instance with interceptors
-
+```
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -91,9 +91,11 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+```
 
-4. Create Service files (by resource)
-
+### 4. Create Service files (by resource)
+ 
+```
 export const authService = {
   // Register a new user
   register: async (data: RegisterDto): Promise<AuthResponseDto> => {
@@ -116,12 +118,14 @@ export const authService = {
     return response.data;
   },
 };
+```
 
-5. Create Auth utility
+### 5. Create Auth utility
 
-6. Create .env file
-
+### 6. Create .env file
+```
 VITE_API_BASE_URL=http://localhost:5146
+```
 
 Vite automatically loads .env files and exposes variables prefixed with VITE_ to the client.
 
